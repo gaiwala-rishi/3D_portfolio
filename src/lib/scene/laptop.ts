@@ -67,8 +67,8 @@ export function buildLaptop(
 
 	const laptopGroup = new THREE.Group()
 	laptopGroup.add(model)
-	laptopGroup.position.set(0.0, 1.10, -5.8)
-	laptopGroup.rotation.y = Math.PI * 1.04
+	laptopGroup.position.set(-1.4, 1.08, -6.8)
+	laptopGroup.rotation.y = 1.6
 	scene.add(laptopGroup)
 
 	return laptopGroup

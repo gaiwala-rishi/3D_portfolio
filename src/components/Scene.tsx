@@ -19,6 +19,7 @@ import { buildRoom } from '@/lib/scene/room'
 import { buildDesk } from '@/lib/scene/desk'
 import { buildLamp } from '@/lib/scene/lamp'
 import { buildLaptop } from '@/lib/scene/laptop'
+import { buildImac } from '@/lib/scene/imac'
 import { buildBookshelf } from '@/lib/scene/bookshelf'
 import { buildFrame, updateWallFrameTime } from '@/lib/scene/frame'
 import { buildChair } from '@/lib/scene/chair'
@@ -113,7 +114,7 @@ export default function Scene() {
 		const loadGLTF = (url: string) =>
 			new Promise<any>((resolve, reject) => loader.load(url, resolve, undefined, reject))
 
-		const [chairGLTF, clockGLTF, sofaGLTF, coffeeTableGLTF, deskGLTF, macbookGLTF, tableLampGLTF] = await Promise.all([
+		const [chairGLTF, clockGLTF, sofaGLTF, coffeeTableGLTF, deskGLTF, macbookGLTF, tableLampGLTF, imacGLTF, bookshelfGLTF] = await Promise.all([
 			loadGLTF('/models/office_chair.glb'),
 			loadGLTF('/models/classic_wall_clock.glb'),
 			loadGLTF('/models/sofa_48.glb'),
@@ -121,6 +122,8 @@ export default function Scene() {
 			loadGLTF('/models/desk.glb'),
 			loadGLTF('/models/macbook_pro.glb'),
 			loadGLTF('/models/table_lamp.glb'),
+			loadGLTF('/models/imac_green.glb'),
+			loadGLTF('/models/bookshelf.glb'),
 		])
 
 		if (cancelled) return
@@ -143,7 +146,8 @@ export default function Scene() {
 
 		const laptopScreenMats: THREE.MeshStandardMaterial[] = []
 		const laptopGroup = buildLaptop(scene, laptopScreenMats, macbookGLTF)
-		const bookshelfGroup = buildBookshelf(scene)
+		buildImac(scene, laptopScreenMats, imacGLTF)
+		const bookshelfGroup = buildBookshelf(scene, bookshelfGLTF)
 		const frameResult = buildFrame(scene)
 		const { wallFrameGroup } = frameResult
 
@@ -213,8 +217,8 @@ export default function Scene() {
 			{
 				mesh: laptopGroup,
 				key: 'laptop',
-				camPos: new THREE.Vector3(0.1, 2.4, -3.8),
-				camTarget: new THREE.Vector3(0.0, 1.15, -5.8),
+				camPos: new THREE.Vector3(0.75, 2.4, -3.8),
+				camTarget: new THREE.Vector3(0.65, 1.15, -5.8),
 			},
 			{
 				mesh: bookshelfGroup,

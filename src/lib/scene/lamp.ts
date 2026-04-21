@@ -69,8 +69,8 @@ export function buildLamp(scene: THREE.Scene, gltf: GLTFResult): LampResult {
 	lampGroup.add(bulb)
 	bulb.position.set(0, 0.5, 0) // near top of lamp
 
-	lampGroup.position.set(0.75, 1.17, -6.1)
-	lampGroup.rotation.y = Math.PI / 2   // 90° anti-clockwise
+	lampGroup.position.set(-1.1, 1.17, -5.85)
+	lampGroup.rotation.y = -0.5
 	scene.add(lampGroup)
 
 	return { lampGroup, lampMeshes, shadeMat, bulb }
