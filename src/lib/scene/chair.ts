@@ -2,6 +2,8 @@ import * as THREE from 'three'
 
 interface GLTFResult { scene: THREE.Group }
 
+export const CHAIR_ROT_Y = -Math.PI * 0.18
+
 export function buildChair(scene: THREE.Scene, gltf: GLTFResult): THREE.Group {
 	const model = gltf.scene
 
@@ -9,11 +11,7 @@ export function buildChair(scene: THREE.Scene, gltf: GLTFResult): THREE.Group {
 		if (c.isMesh) { c.castShadow = true; c.receiveShadow = true }
 	})
 
-	// GLB model is exported upside-down — flip around Z then face it toward +Z
-	model.rotation.y = Math.PI
-	model.updateMatrixWorld(true)
-
-	// Scale so chair height ≈ 1.55m (taller than character)
+	// Scale so model height ≈ 2m
 	const rawBox = new THREE.Box3().setFromObject(model)
 	const rawSize = new THREE.Vector3()
 	rawBox.getSize(rawSize)
@@ -32,7 +30,7 @@ export function buildChair(scene: THREE.Scene, gltf: GLTFResult): THREE.Group {
 	const chairGroup = new THREE.Group()
 	chairGroup.add(model)
 	chairGroup.position.set(1.6, 0, -2.2)
-	chairGroup.rotation.y = -Math.PI * 0.18
+	chairGroup.rotation.y = CHAIR_ROT_Y
 	scene.add(chairGroup)
 
 	return chairGroup

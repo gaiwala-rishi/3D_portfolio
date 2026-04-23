@@ -69,6 +69,16 @@ export function buildLaptop(
 	laptopGroup.add(model)
 	laptopGroup.position.set(-1.4, 1.08, -6.8)
 	laptopGroup.rotation.y = 1.6
+
+	// Invisible hit-proxy so raycasting reliably detects the laptop regardless
+	// of bounding-sphere staleness after animation posing.
+	const hitProxy = new THREE.Mesh(
+		new THREE.BoxGeometry(0.6, 0.5, 0.45),
+		new THREE.MeshBasicMaterial({ visible: false })
+	)
+	hitProxy.position.set(0, 0.25, 0)
+	laptopGroup.add(hitProxy)
+
 	scene.add(laptopGroup)
 
 	return laptopGroup

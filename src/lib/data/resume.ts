@@ -55,7 +55,7 @@ export const resume: ResumeData = {
 		bio: 'I build fast, accessible, and visually rich web applications. Passionate about bridging design and engineering — from pixel-perfect interfaces to robust backend systems.',
 		facts: ['4+ years experience', '10+ shipped products', 'Open-source contributor', 'Coffee-driven'],
 		links: [
-			{ label: 'GitHub', url: 'https://github.com/rishi-gaywala', type: 'primary' },
+			{ label: 'GitHub', url: 'https://github.com/gaywala-rishi', type: 'primary' },
 			{ label: 'Portfolio', url: '/', type: 'secondary' },
 			{ label: 'Resume PDF', url: '#', type: 'secondary' }
 		]

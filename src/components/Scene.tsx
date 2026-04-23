@@ -23,8 +23,7 @@ import { buildLaptop } from '@/lib/scene/laptop'
 import { buildImac } from '@/lib/scene/imac'
 import { buildBookshelf } from '@/lib/scene/bookshelf'
 import { buildFrame, updateWallFrameTime } from '@/lib/scene/frame'
-import { buildChair } from '@/lib/scene/chair'
-import { buildCharacterAndBed, DESK_ROT_Y } from '@/lib/scene/character'
+import { buildChair, CHAIR_ROT_Y } from '@/lib/scene/chair'
 import { buildSofa } from '@/lib/scene/sofa'
 import { buildClockMesh } from '@/lib/scene/clock-mesh'
 import { buildProps } from '@/lib/scene/props'
@@ -118,10 +117,10 @@ export default function Scene() {
 		const loadGLTF = (url: string) =>
 			new Promise<any>((resolve, reject) => loader.load(url, resolve, undefined, reject))
 
-		const [chairGLTF, clockGLTF, sofaGLTF, coffeeTableGLTF, deskGLTF, macbookGLTF, tableLampGLTF, imacGLTF, bookshelfGLTF] = await Promise.all([
-			loadGLTF('/api/models/office_chair.glb'),
-			loadGLTF('/api/models/classic_wall_clock.glb'),
-			loadGLTF('/api/models/sofa_48.glb'),
+		const [ownerOnChairGLTF, clockGLTF, sofaGLTF, coffeeTableGLTF, deskGLTF, macbookGLTF, tableLampGLTF, imacGLTF, bookshelfGLTF] = await Promise.all([
+			loadGLTF('/api/models/owner_on_chair.glb'),
+			loadGLTF('/api/models/wall_clock.glb'),
+			loadGLTF('/api/models/sofa.glb'),
 			loadGLTF('/api/models/coffee_table.glb'),
 			loadGLTF('/api/models/desk.glb'),
 			loadGLTF('/api/models/macbook_pro.glb'),
@@ -155,10 +154,8 @@ export default function Scene() {
 		const frameResult = buildFrame(scene)
 		const { wallFrameGroup } = frameResult
 
-		// Executive recliner — Contact interactive
-		const chairGroup = buildChair(scene, chairGLTF)
-
-		const { characterGroup } = buildCharacterAndBed(scene, laptopScreenMats)
+		// Owner on chair — Contact interactive
+		const chairGroup = buildChair(scene, ownerOnChairGLTF)
 		buildSofa(scene, sofaGLTF, coffeeTableGLTF)
 
 		setProgress(78, 'Hanging clock…')
@@ -221,8 +218,8 @@ export default function Scene() {
 			{
 				mesh: laptopGroup,
 				key: 'laptop',
-				camPos: new THREE.Vector3(0.75, 2.4, -3.8),
-				camTarget: new THREE.Vector3(0.65, 1.15, -5.8),
+				camPos: new THREE.Vector3(0.1, 1.5, -6.6),
+				camTarget: new THREE.Vector3(-1.0, 1.1, -6.8),
 			},
 			{
 				mesh: bookshelfGroup,
@@ -361,7 +358,9 @@ export default function Scene() {
 			focusedObjectRef.current = obj
 			setEmissive(obj.mesh, 0xfff5e0, 0.35)
 			setFocus(obj.key)
-			animateCamera(obj.camPos, obj.camTarget)
+			animateCamera(obj.camPos, obj.camTarget, () => {
+				clearEmissive(obj.mesh)
+			})
 			setTimeout(() => openPanel(obj.key), 320)
 		}
 		focusObjectFnRef.current = focusObject
@@ -533,7 +532,7 @@ export default function Scene() {
 			posAttr.needsUpdate = true
 
 			// Character idle sway
-			characterGroup.rotation.y = DESK_ROT_Y + Math.sin(time * 0.0009) * 0.028
+			chairGroup.rotation.y = CHAIR_ROT_Y + Math.sin(time * 0.0009) * 0.028
 
 			updateLabels(!!focusedObjectRef.current)
 			controls.update()
