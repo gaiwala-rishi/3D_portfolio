@@ -32,7 +32,6 @@ const DEFAULT_CAM_TARGET = new THREE.Vector3(0, 1.4, -3.5);
 
 export default function Scene() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const labelsRef = useRef<HTMLDivElement>(null);
 
   const focusKey = useSceneStore((s) => s.focus.key);
 
@@ -60,7 +59,6 @@ export default function Scene() {
 
     async function setup() {
       const canvasEl = canvasRef.current!;
-      const labelsEl = labelsRef.current!;
 
       try {
         const c = document.createElement("canvas");
@@ -167,9 +165,12 @@ export default function Scene() {
       const { winPaneMats, winLight } = buildRoom(scene);
 
       setProgress(62, "Placing furniture…");
-      buildDesk(scene, deskGLTF);
+      const deskGroup = buildDesk(scene, deskGLTF);
 
-      const { lampMeshes, shadeMat, bulb } = buildLamp(scene, tableLampGLTF);
+      const { lampGroup, lampMeshes, shadeMat, bulb } = buildLamp(
+        scene,
+        tableLampGLTF,
+      );
       const lampShadeMatRef = { current: shadeMat };
       const lampBulbRef = { current: bulb };
       let lampOn = true;
@@ -182,6 +183,17 @@ export default function Scene() {
       const chairGroup = buildChair(scene, ownerOnChairGLTF);
       buildSofa(scene, sofaGLTF, coffeeTableGLTF, floorLampGLTF);
 
+      // Group desk area objects together (world transforms preserved via attach)
+      const deskAreaGroup = new THREE.Group();
+      scene.add(deskAreaGroup);
+      deskAreaGroup.attach(deskGroup);
+      deskAreaGroup.attach(lampGroup);
+      deskAreaGroup.attach(laptopGroup);
+      deskAreaGroup.attach(imacGroup);
+      deskAreaGroup.attach(chairGroup);
+      deskAreaGroup.scale.setScalar(1.3);
+      deskAreaGroup.position.x = 1.7;
+
       setProgress(78, "Hanging clock…");
       const { hourPivot, minPivot, secPivot } = buildClockMesh(
         scene,
@@ -191,64 +203,13 @@ export default function Scene() {
 
       setProgress(86, "Wiring interactions…");
 
-      // ── Floating labels ───────────────────────────────────────────────────
-      labelsEl.innerHTML = "";
-      const labelDefs: any[] = [
-        {
-          key: "imac",
-          mesh: laptopGroup,
-          icon: "🖼️",
-          text: "About Me",
-          offset: new THREE.Vector3(0, 0.7, 0),
-        },
-        {
-          key: "bookshelf",
-          mesh: bookshelfGroup,
-          icon: "📚",
-          text: "Skills",
-          offset: new THREE.Vector3(0, 2.3, 0),
-        },
-        {
-          key: "macbook",
-          mesh: imacGroup,
-          icon: "💻",
-          text: "Projects",
-          offset: new THREE.Vector3(0, 1.0, 0),
-        },
-        {
-          key: "character",
-          mesh: chairGroup,
-          icon: "🪑",
-          text: "Contact",
-          offset: new THREE.Vector3(0, 2.0, 0),
-        },
-      ];
-      const labelEls: Record<string, HTMLElement> = {};
-      labelDefs.forEach((def) => {
-        const div = document.createElement("div");
-        div.className = "scene-label";
-        div.innerHTML = `<span class="label-emoji">${def.icon}</span><span class="label-text">${def.text}</span>`;
-        if ("ontouchstart" in window) {
-          div.style.pointerEvents = "auto";
-          div.addEventListener("click", (e: Event) => {
-            e.stopPropagation();
-            const obj = interactiveObjectsRef.current.find(
-              (o: any) => o.key === def.key,
-            );
-            if (obj) focusObject(obj);
-          });
-        }
-        labelsEl.appendChild(div);
-        labelEls[def.key] = div;
-      });
-
       // ── Interactive objects ───────────────────────────────────────────────
       const interactiveObjects: any[] = [
         {
           mesh: laptopGroup,
           key: "imac",
-          camPos: new THREE.Vector3(0.1, 1.8, -6.6),
-          camTarget: new THREE.Vector3(-1.0, 1.4, -6.8),
+          camPos: new THREE.Vector3(1.83, 2.34, -8.58),
+          camTarget: new THREE.Vector3(0.4, 1.82, -8.84),
           camFov: 20,
         },
         {
@@ -261,16 +222,16 @@ export default function Scene() {
         {
           mesh: imacGroup,
           key: "macbook",
-          camPos: new THREE.Vector3(-0.4, 1.9, -6.8),
-          camTarget: new THREE.Vector3(-0.4, 1.5, -5.9),
-          camFov: 25,
+          camPos: new THREE.Vector3(1.18, 2.47, -8.84),
+          camTarget: new THREE.Vector3(1.18, 1.95, -7.67),
+          camFov: 35,
         },
         {
           // Recliner chair → Contact
           mesh: chairGroup,
           key: "character",
-          camPos: new THREE.Vector3(-0.2, 2.2, -0.5),
-          camTarget: new THREE.Vector3(1.6, 0.9, -2.2),
+          camPos: new THREE.Vector3(-0.9, 2.73, -6.5),
+          camTarget: new THREE.Vector3(2.35, 1.17, -9.49),
           camFov: defaultFov,
         },
       ];
@@ -543,31 +504,6 @@ export default function Scene() {
       window.addEventListener("touchend", onTouchEnd, { passive: true });
       window.addEventListener("resize", onResize);
 
-      // ── Label projection ──────────────────────────────────────────────────
-      const _vProj = new THREE.Vector3();
-      function updateLabels(hideDueToFocus: boolean) {
-        labelDefs.forEach((def: any) => {
-          const el = labelEls[def.key];
-          if (!el) return;
-          if (hideDueToFocus) {
-            el.style.opacity = "0";
-            return;
-          }
-          const wp = new THREE.Vector3();
-          def.mesh.getWorldPosition(wp);
-          wp.add(def.offset);
-          _vProj.copy(wp).project(camera);
-          if (_vProj.z > 1) {
-            el.style.opacity = "0";
-            return;
-          }
-          const x = (_vProj.x * 0.5 + 0.5) * window.innerWidth;
-          const y = (-_vProj.y * 0.5 + 0.5) * window.innerHeight;
-          el.style.transform = `translate(-50%, -100%) translate(${x}px,${y}px)`;
-          el.style.opacity = "1";
-        });
-      }
-
       tickScene();
       setProgress(100, "Ready!");
 
@@ -618,7 +554,6 @@ export default function Scene() {
         // Character idle sway
         chairGroup.rotation.y = CHAIR_ROT_Y + Math.sin(time * 0.0009) * 0.028;
 
-        updateLabels(!!focusedObjectRef.current);
         controls.update();
         renderer.render(scene, camera);
       }
@@ -656,16 +591,6 @@ export default function Scene() {
           zIndex: 0,
         }}
         aria-label="Interactive 3D office portfolio — use mouse to orbit, click objects to explore"
-      />
-      <div
-        ref={labelsRef}
-        style={{
-          position: "fixed",
-          inset: 0,
-          pointerEvents: "none",
-          zIndex: 1,
-        }}
-        aria-hidden="true"
       />
     </>
   );

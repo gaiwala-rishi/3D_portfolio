@@ -4,7 +4,7 @@ interface GLTFResult {
   scene: THREE.Group;
 }
 
-export function buildDesk(scene: THREE.Scene, gltf: GLTFResult): void {
+export function buildDesk(scene: THREE.Scene, gltf: GLTFResult): THREE.Group {
   const model = gltf.scene;
   model.traverse((c: any) => {
     if (c.isMesh) {
@@ -36,4 +36,6 @@ export function buildDesk(scene: THREE.Scene, gltf: GLTFResult): void {
   deskGroup.position.set(-0.3, 0, -6.5);
   deskGroup.rotation.y = -Math.PI / 2; // 90° clockwise
   scene.add(deskGroup);
+
+  return deskGroup;
 }
