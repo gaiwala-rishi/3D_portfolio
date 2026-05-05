@@ -145,103 +145,86 @@ export function buildRoom(scene: THREE.Scene): RoomResult {
     scene.add(m);
   });
 
-  // ── Large back-wall windows with roller blinds ─────────────────────────────
+  // ── Single wide window with scenic view ──────────────────────────────────
   const winPaneMats: THREE.MeshStandardMaterial[] = [];
   const frameMat = mat(0x888880, { roughness: 0.4, metalness: 0.5 });
 
-  // 3 window panels centered on back wall
-  const winPanelW = 2.6,
+  const winW = 8.5,
     winH = 4.5,
     winY = 3.0,
-    winGap = 0.14;
-  const winXPositions = [-2.86, 0, 2.86];
+    winX = 0;
+  const wallZ = -11.05;
 
-  winXPositions.forEach((wx) => {
-    // Outer frame
-    const frameTop = new THREE.Mesh(
-      new THREE.BoxGeometry(winPanelW + 0.1, 0.08, 0.06),
-      frameMat,
-    );
-    frameTop.position.set(wx, winY + winH / 2 + 0.04, -11.06);
-    scene.add(frameTop);
-    const frameBot = new THREE.Mesh(
-      new THREE.BoxGeometry(winPanelW + 0.1, 0.08, 0.06),
-      frameMat,
-    );
-    frameBot.position.set(wx, winY - winH / 2 - 0.04, -11.06);
-    scene.add(frameBot);
-    const frameL = new THREE.Mesh(
-      new THREE.BoxGeometry(0.06, winH, 0.06),
-      frameMat,
-    );
-    frameL.position.set(wx - winPanelW / 2 - 0.03, winY, -11.06);
-    scene.add(frameL);
-    const frameR = new THREE.Mesh(
-      new THREE.BoxGeometry(0.06, winH, 0.06),
-      frameMat,
-    );
-    frameR.position.set(wx + winPanelW / 2 + 0.03, winY, -11.06);
-    scene.add(frameR);
-    // Center mullion
-    const mullion = new THREE.Mesh(
-      new THREE.BoxGeometry(0.05, winH, 0.05),
-      frameMat,
-    );
-    mullion.position.set(wx, winY, -11.06);
-    scene.add(mullion);
+  // Scenic exterior visible through the window — sized to fill full opening
+  const sceneryTex = texLoader.load("/textures/window_view/view.jpeg");
+  sceneryTex.colorSpace = THREE.SRGBColorSpace;
+  const scenery = new THREE.Mesh(
+    new THREE.PlaneGeometry(winW, winH),
+    new THREE.MeshBasicMaterial({ map: sceneryTex, toneMapped: false }),
+  );
+  scenery.position.set(winX, winY, wallZ + 0.01);
+  scene.add(scenery);
 
-    // Glass panes (left + right of mullion)
-    [-winPanelW / 4, winPanelW / 4].forEach((ox) => {
-      const paneMat = new THREE.MeshStandardMaterial({
-        color: 0xc8d8e8,
-        emissive: 0xaac8e0,
-        emissiveIntensity: 0.6,
-        roughness: 0.08,
-        metalness: 0.1,
-        transparent: true,
-        opacity: 0.55,
-      });
-      winPaneMats.push(paneMat);
-      const pane = new THREE.Mesh(
-        new THREE.PlaneGeometry(winPanelW / 2 - winGap, winH - winGap),
-        paneMat,
-      );
-      pane.position.set(wx + ox, winY, -11.07);
-      scene.add(pane);
-    });
-
-    // Roller blind (white, partially lowered — covers top ~55%)
-    const blindH = winH * 0.55;
-    const blindMat = mat(0xf5f3f0, { roughness: 0.95 });
-    const blind = new THREE.Mesh(
-      new THREE.PlaneGeometry(winPanelW - 0.12, blindH),
-      blindMat,
-    );
-    blind.position.set(wx, winY + winH / 2 - blindH / 2, -11.03);
-    scene.add(blind);
-
-    // Blind housing at top
-    const blindRail = new THREE.Mesh(
-      new THREE.BoxGeometry(winPanelW + 0.06, 0.06, 0.08),
-      mat(0x999890, { roughness: 0.4, metalness: 0.4 }),
-    );
-    blindRail.position.set(wx, winY + winH / 2 + 0.03, -11.03);
-    scene.add(blindRail);
+  // Glass pane — layered over scenery for window-glass feel
+  const glassMat = new THREE.MeshStandardMaterial({
+    color: 0xd0e8f8,
+    emissive: new THREE.Color(0x88b8d8),
+    emissiveIntensity: 0.07,
+    roughness: 0.02,
+    metalness: 0.06,
+    transparent: true,
+    opacity: 0.22,
+    depthWrite: false,
   });
+  winPaneMats.push(glassMat);
+  const glassMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(winW, winH),
+    glassMat,
+  );
+  glassMesh.position.set(winX, winY, wallZ + 0.02);
+  scene.add(glassMesh);
+
+  // Outer frame
+  const fW = 0.09,
+    fD = 0.07;
+  (
+    [
+      [winW + fW, fW, fD, winX, winY + winH / 2 + fW / 2, wallZ + 0.03],
+      [winW + fW, fW, fD, winX, winY - winH / 2 - fW / 2, wallZ + 0.03],
+      [fW, winH + fW * 2, fD, winX - winW / 2 - fW / 2, winY, wallZ + 0.03],
+      [fW, winH + fW * 2, fD, winX + winW / 2 + fW / 2, winY, wallZ + 0.03],
+    ] as [number, number, number, number, number, number][]
+  ).forEach(([w, h, d, x, y, z]) => {
+    const m = new THREE.Mesh(
+      new THREE.BoxGeometry(w, h, d),
+      frameMat,
+    );
+    m.position.set(x, y, z);
+    scene.add(m);
+  });
+
+  // Vertical mullions — divide into 3 visual sections
+  [-winW / 3, winW / 3].forEach((mx) => {
+    const mull = new THREE.Mesh(
+      new THREE.BoxGeometry(0.055, winH, fD),
+      frameMat,
+    );
+    mull.position.set(mx, winY, wallZ + 0.03);
+    scene.add(mull);
+  });
+
+  // Window sill ledge
+  const sill = new THREE.Mesh(
+    new THREE.BoxGeometry(winW + 0.3, 0.06, 0.18),
+    mat(0xe8e6e0, { roughness: 0.5, metalness: 0.1 }),
+  );
+  sill.position.set(winX, winY - winH / 2 - 0.03, wallZ + 0.09);
+  scene.add(sill);
 
   // Window point light
   const winLight = new THREE.PointLight(0xd4eaf5, 0.8, 12);
-  winLight.position.set(0, winY, -9.75);
+  winLight.position.set(0, winY, wallZ + 1.3);
   scene.add(winLight);
-
-  // ── Wall accent panel (right wall, behind bookshelf area) ─────────────────
-  const accentPanel = new THREE.Mesh(
-    new THREE.PlaneGeometry(3.0, 4.0),
-    mat(0xcfcbc4, { roughness: 0.9 }),
-  );
-  accentPanel.position.set(6.46, 3.9, -8.45);
-  accentPanel.rotation.y = -Math.PI / 2;
-  scene.add(accentPanel);
 
   // ── Ceiling border trim ───────────────────────────────────────────────────
   const borderMat = gloss(0xdddbd6, { roughness: 0.5, metalness: 0.1 });
